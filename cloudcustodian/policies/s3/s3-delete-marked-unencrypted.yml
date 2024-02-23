@@ -1,0 +1,25 @@
+policies:
+  - name: s3-delete-marked-unencrypted-policy
+    mode:
+      type: periodic
+      schedule: "rate(1 day)"
+      role: cloud-custodian-admin-access
+    resource: aws.s3
+    description: |
+      Delete unencrypted S3 buckets scheduled for deletion
+    filters:
+      - type: marked-for-op
+        tag: custodian_s3_not_encrypted
+        op: delete
+    actions:
+      - type: notify
+        slack_template: slack_default
+        violation_desc: "S3 bucket Unencrypted"
+        action_desc: "Deleted S3 bucket after specified time"
+        to:
+          -  {slack_webhook_url}
+        transport:
+          type: sqs
+          queue: {sqs_queue_url}
+      - type: delete
+        remove-contents: true
